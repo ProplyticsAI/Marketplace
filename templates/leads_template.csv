@@ -1,0 +1,2 @@
+externalId,firstName,lastName,phone,email,street,postalCode,city,propertyType,source,consentGiven,consentAt,notes
+abc-1,Max,Mustermann,+491700000000,max@example.com,Musterweg 1,10115,Berlin,Einfamilienhaus,Landingpage,true,2026-01-01T10:00:00Z,Beispiel

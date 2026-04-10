@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CampaignStatus {
+  draft
+  active
+  paused
+  archived
+}
+
+enum LeadImportStatus {
+  uploaded
+  invalid
+  validated
+}
+
+enum LeadStatus {
+  uploaded
+  invalid
+  validated
+  ready_to_call
+  calling
+  no_answer
+  busy
+  callback_requested
+  failed
+  not_interested
+  valuation_only
+  qualified
+  hot_lead
+  appointment_booked
+  human_followup_required
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  campaigns    Campaign[]
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String
+  description     String?
+  language        String
+  callWindowStart String
+  callWindowEnd   String
+  maxAttempts     Int
+  scriptVersion   String
+  status          CampaignStatus @default(draft)
+  createdById     String?
+  createdBy       User?          @relation(fields: [createdById], references: [id])
+  leads           Lead[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model LeadImport {
+  id            String   @id @default(cuid())
+  sourceType    String
+  fileName      String?
+  rawRowCount   Int
+  validRowCount Int
+  invalidRowCount Int
+  mappingJson   Json
+  leads         Lead[]
+  createdAt     DateTime @default(now())
+}
+
+model Lead {
+  id                   String           @id @default(cuid())
+  externalId           String?
+  firstName            String?
+  lastName             String?
+  phone                String
+  email                String?
+  street               String?
+  postalCode           String?
+  city                 String?
+  propertyType         String?
+  source               String?
+  consentGiven         Boolean          @default(false)
+  consentAt            DateTime?
+  notes                String?
+  status               LeadStatus       @default(uploaded)
+  importStatus         LeadImportStatus @default(uploaded)
+  leadScore            Int              @default(0)
+  nextAction           String?
+  callAttemptsCount    Int              @default(0)
+  lastCallAt           DateTime?
+  callResult           String?
+  appointmentInterest  Boolean          @default(false)
+  transcript           String?
+  callSummary          String?
+  structuredResultJson Json?
+  rawData              Json?
+  campaignId           String?
+  campaign             Campaign?        @relation(fields: [campaignId], references: [id])
+  importId             String?
+  import               LeadImport?      @relation(fields: [importId], references: [id])
+  callAttempts         CallAttempt[]
+  appointments         Appointment[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([phone])
+  @@index([status])
+}
+
+model CallAttempt {
+  id                   String   @id @default(cuid())
+  leadId               String
+  lead                 Lead     @relation(fields: [leadId], references: [id])
+  provider             String
+  providerCallId       String?
+  status               String
+  transcript           String?
+  summary              String?
+  structuredResultJson Json?
+  createdAt            DateTime @default(now())
+}
+
+model Appointment {
+  id         String   @id @default(cuid())
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id])
+  startsAt   DateTime
+  endsAt     DateTime?
+  location   String?
+  notes      String?
+  createdAt  DateTime @default(now())
+}
